@@ -1,617 +1,636 @@
 zabbix_export:
-  version: '6.0'
-  date: '2021-11-21T21:46:44Z'
+  version: "6.0"
+  date: "2022-12-07T04:41:39Z"
   groups:
-    -
-      uuid: 0e60ac85bc3941e2a1d66a048ff164da
+    - uuid: 0e60ac85bc3941e2a1d66a048ff164da
       name: UPS
   templates:
-    -
-      uuid: 76d60706049540ffb4e265fcd0aecf9f
-      template: 'UPS CyberPower PR1000RT2U'
-      name: 'UPS CyberPower PR1000RT2U'
+    - uuid: 76d60706049540ffb4e265fcd0aecf9f
+      template: "CyberPower UPS"
+      name: "CyberPower UPS"
       description: |
-        ## Overview
-        
-        I didn't see any templates for Cyberpower UPS systems so I made a quick and simple one.
-        
-        
-         
-        
-        
-        Hope this can help someone else!
-        
-        
-        
-        ## Author
-        
-        Adam Loghides
-        
-        
+        Support all CyberPower UPS's.
+
+        Tested with CP1500PFCLCDa.
+
+        Uses CyberPower's CPS Management Information Base(MIB)
+        CPS-MIB { iso org(3) dod(6) internet(1) private(4) enterprises(1) cps(3808) }
+        Using trees under upsIdent, upsBattery, upsOutput, and upsInput
       groups:
-        -
-          name: UPS
+        - name: UPS
       items:
-        -
-          uuid: 05adbf07979549bc9e5ba9f62acc2bc8
-          name: UPS-BatteryLevelPercent
+        - uuid: 05adbf07979549bc9e5ba9f62acc2bc8
+          name: "UPS Battery Capacity"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.2.1.0
-          key: UPS-BatteryLevelPercent
-          delay: 30s
-          units: '%'
+          key: cps.hardware.ups.upsAdvanceBatteryCapacity
+          units: "%"
+          description: "The battery capacity expressed in percentage."
           tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
-        -
-          uuid: a60d1867a49f4d1bac0e73c8da3f4940
-          name: UPS-BatteryMinutesRemaining
-          type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.2.4.0
-          key: UPS-BatteryMinutesRemaining
-          delay: 30s
-          units: minutes
-          preprocessing:
-            -
-              type: MULTIPLIER
-              parameters:
-                - '.0001666666666666667'
-          tags:
-            -
-              tag: Application
-              value: 'UPS Fault Status'
-          triggers:
-            -
-              uuid: 793578bb066545b6bf851a74d97cdad1
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-BatteryMinutesRemaining,#1:now-0)<20'
-              name: 'LESS than 20 minutes battery remaining on {HOST.NAME}'
-              priority: DISASTER
-              manual_close: 'YES'
-        -
-          uuid: d227e867676d49358227b0c26f82681a
-          name: UPS-BatteryReplaceStatus
+            - tag: Application
+              value: "UPS Battery"
+        - uuid: d227e867676d49358227b0c26f82681a
+          name: "UPS Battery Replacement Indicator"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.2.5.0
-          key: UPS-BatteryReplaceStatus
-          delay: 30s
+          key: cps.hardware.ups.upsAdvanceBatteryReplaceIndicator
+          delay: 10m
+          description: "This value indicates if UPS batteries need to be replaced."
           valuemap:
-            name: 'CyberPower UPS Battery Replacement Indicator'
+            name: "CyberPower UPS Battery Replacement Indicator"
           tags:
-            -
-              tag: Application
-              value: 'UPS Fault Status'
+            - tag: Application
+              value: "UPS Battery"
           triggers:
-            -
-              uuid: 859920f8b6224b3c85eae07ebb51e074
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-BatteryReplaceStatus)=2'
-              name: 'UPS Battery Replacement Needed'
+            - uuid: 859920f8b6224b3c85eae07ebb51e074
+              expression: "last(/CyberPower UPS/cps.hardware.ups.upsAdvanceBatteryReplaceIndicator)=2"
+              name: "UPS Battery Replacement Needed"
               priority: DISASTER
-              manual_close: 'YES'
-        -
-          uuid: 6a56d84adce44cc0b6a96d969422a05a
-          name: UPS-BatteryVoltage
+              manual_close: "YES"
+        - uuid: a60d1867a49f4d1bac0e73c8da3f4940
+          name: "UPS Battery Runtime Remaining"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.2.4.0
+          key: cps.hardware.ups.upsAdvanceBatteryRunTimeRemaining
+          value_type: FLOAT
+          units: Minutes
+          description: "The UPS battery remaining run time."
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - "0.00016666666666667"
+          tags:
+            - tag: Application
+              value: "UPS Battery"
+          triggers:
+            - uuid: 793578bb066545b6bf851a74d97cdad1
+              expression: "last(/CyberPower UPS/cps.hardware.ups.upsAdvanceBatteryRunTimeRemaining,#1:now-0)<20"
+              name: "LESS than 20 minutes battery remaining on {HOST.NAME}"
+              priority: DISASTER
+              manual_close: "YES"
+        - uuid: 01811df36e2b4d039ff3e9ecbc45b69a
+          name: "UPS Battery Temperature"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.2.3.0
+          key: cps.hardware.ups.upsAdvanceBatteryTemperature
+          delay: 10m
+          units: minutes
+          description: "The UPS battery temperature expressed in Celsius."
+          tags:
+            - tag: Application
+              value: "UPS Battery"
+        - uuid: 6a56d84adce44cc0b6a96d969422a05a
+          name: "UPS Battery Voltage"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.2.2.0
-          key: UPS-BatteryVoltage
-          delay: 30s
+          key: cps.hardware.ups.upsAdvanceBatteryVoltage
+          value_type: FLOAT
           units: Volts
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - ".1"
           tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
-        -
-          uuid: bd4cf130f1914a58ac7d2f72e5e67430
-          name: UPS-CurrentRating
+            - tag: Application
+              value: "UPS Battery"
+        - uuid: 83517f5b4d314f80b99391ebfd1cba53
+          name: "UPS Battery Voltage Rating"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.2.8.0
+          key: cps.hardware.ups.upsAdvanceBatteryVoltageRating
+          delay: 1d
+          units: Volts
+          description: "The DC voltage rating of the battery set."
+          tags:
+            - tag: Application
+              value: "UPS Battery"
+        - uuid: fc74d8f2b64c4e1e84245510507bc4cd
+          name: "UPS Agent Firmware Version"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.2.4.0
+          key: cps.hardware.ups.upsAdvanceIdentAgentFirmwareRevision
+          delay: 1d
+          trends: "0"
+          value_type: TEXT
+          description: "The SNMP agent firmware revision. Agent may be something like the remote management card RMCARD205"
+          tags:
+            - tag: Application
+              value: "UPS Information"
+        - uuid: 542c5fd0f28442fc81059c15ee93a05e
+          name: "UPS Agent Serial Number"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.2.9.0
+          key: cps.hardware.ups.upsAdvanceIdentAgentSerialNumber
+          delay: 1d
+          trends: "0"
+          value_type: CHAR
+          description: "A string identifying the serial number of the Agent."
+          tags:
+            - tag: Application
+              value: "UPS Information"
+        - uuid: bd4cf130f1914a58ac7d2f72e5e67430
+          name: "UPS Current Rating"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.2.8.0
-          key: UPS-CurrentRating
-          delay: 12h
+          key: cps.hardware.ups.upsAdvanceIdentCurrentRating
+          delay: 1d
+          value_type: FLOAT
           units: amp
+          description: "The output current rating of the UPS. Measured in tenths of Amps."
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - ".1"
           tags:
-            -
-              tag: Application
-              value: 'UPS Information'
-        -
-          uuid: f776b52977204c8ca14cdc250ecea7e6
-          name: UPS-DateLastReplacedBattery
+            - tag: Application
+              value: "UPS Information"
+        - uuid: 8b3c6030e7094e5d84390d5abe0189b4
+          name: "UPS Firmware Revision"
           type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.1.3.0
-          key: UPS-DateLastReplaced
-          delay: 30s
-          trends: '0'
-          value_type: TEXT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.2.1.0
+          key: cps.hardware.ups.upsAdvanceIdentFirmwareRevision
+          delay: 1d
+          trends: "0"
+          value_type: CHAR
+          description: "The UPS firmware revision."
           tags:
-            -
-              tag: Application
-              value: 'UPS Information'
-        -
-          uuid: 3feb3ef93d6c438b9d9947de610ac6ce
-          name: UPS-FailCause
+            - tag: Application
+              value: "UPS Information"
+        - uuid: 5703844379f54caf91288f8c59b8ab25
+          name: "UPS LoadPower"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.2.7.0
+          key: cps.hardware.ups.upsAdvanceIdentLoadPower
+          delay: 1d
+          units: Watts
+          description: "The power rating(Watts) of the UPS."
+          tags:
+            - tag: Application
+              value: "UPS Information"
+        - uuid: 5646b9d4ab074d54a50dcfacdcae2e85
+          name: "UPS Power Rating"
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.3808.1.1.1.1.2.6.0
+          key: cps.hardware.ups.upsAdvanceIdentPowerRating
+          delay: 1d
+          units: Watts
+          description: "The Volt-Amp rating of the UPS."
+          tags:
+            - tag: Application
+              value: "UPS Information"
+        - uuid: def69b471f6e4227b3e19b307dafa3b1
+          name: "UPS Serial Number"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.2.3.0
+          key: cps.hardware.ups.upsAdvanceIdentSerialNumber
+          delay: 1d
+          trends: "0"
+          value_type: CHAR
+          description: "The UPS serial number in the internal microprocessor."
+          tags:
+            - tag: Application
+              value: "UPS Information"
+        - uuid: 78f6ac9b9ca6487b8a431061fbb831d0
+          name: "UPS Input Frequency"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.3.2.4.0
+          key: cps.hardware.ups.upsAdvanceInputFrequency
+          delay: 5m
+          units: Hz
+          description: "The input line frequency in 1/10 Hz."
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - ".1"
+          tags:
+            - tag: Application
+              value: "UPS Input"
+        - uuid: 0d84624dc83b4e678577c01cd469f741
+          name: "UPS Input Line Failure Cause"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.3.2.5.0
-          key: UPS-FailCause
-          delay: 30s
+          key: cps.hardware.ups.upsAdvanceInputLineFailCause
+          delay: 5m
           description: |
-            DESCRIPTION
-                  "The reason of UPS power failure.
+            The reason of UPS power failure.
                    This value is set to:
                    - noTransfer(1), if UPS is in utility mode.
                    - highLineVoltage(2), if UPS switch to battery mode by reason of
                      input voltage over the high transfer vloltage.
                    - brownout(3), if UPS switch to battery mode by reason of
                      input voltage under the low transfer vloltage.
-                   - selfTest(4), if the UPS was commanded to do a self test."
+                   - selfTest(4), if the UPS was commanded to do a self test.
           valuemap:
-            name: 'CyberPower UPS InputLineFailCause'
+            name: "Input Line Fail Cause"
           tags:
-            -
-              tag: Application
-              value: 'UPS Fault Status'
-        -
-          uuid: 8b3c6030e7094e5d84390d5abe0189b4
-          name: UPS-FirmwareRevision
-          type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.2.1.0
-          key: UPS-FirmwareRevision
-          delay: 12h
-          trends: '0'
-          value_type: CHAR
-          tags:
-            -
-              tag: Application
-              value: 'UPS Information'
-        -
-          uuid: 061562f79b2549f88ee7e05e4758f482
-          name: UPS-InputFrequency
-          type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.3.2.4.0
-          key: UPS-InputFrequency
-          delay: 30s
-          units: Hz
-          preprocessing:
-            -
-              type: MULTIPLIER
-              parameters:
-                - '.1'
-          tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
-        -
-          uuid: 5321c3f40cf44b1a84c9a022b2556bcb
-          name: UPS-InputStatus
-          type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.3.2.6.0
-          key: UPS-InputStatus
-          delay: 30s
-          description: |
-            1 ⇒ normal
-            2 ⇒ overVoltage
-            3 ⇒ underVoltage
-            4 ⇒ frequencyFailure
-            5 ⇒ blackout
-          valuemap:
-            name: 'CyberPower UPS Input Status'
-          tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
-          triggers:
-            -
-              uuid: 534f48fbe656455bae33edc7d75cedaa
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-InputStatus)=5'
-              name: 'Blackout on {HOST.NAME}'
-              priority: DISASTER
-              manual_close: 'YES'
-            -
-              uuid: a6de812453a64fbf95ac6b11c4c21622
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-InputStatus)=4'
-              name: 'Frequency Failure on {HOST.NAME}'
-              priority: DISASTER
-              manual_close: 'YES'
-            -
-              uuid: 6381ad21d05a444bb7b5f4514435473f
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-InputStatus)=3'
-              name: 'Under Voltage on {HOST.NAME}'
-              priority: DISASTER
-              manual_close: 'YES'
-        -
-          uuid: df9df3bf8c6f46569905b2992fa5ec57
-          name: UPS-InputVoltage
+            - tag: Application
+              value: "UPS Input"
+        - uuid: fd899067f64a4420a4c8d67a8391966f
+          name: "UPS Input Line Voltage"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.3.2.1.0
-          key: UPS-InputVoltage
-          delay: 30s
+          key: cps.hardware.ups.upsAdvanceInputLineVoltage
+          delay: 5m
+          value_type: FLOAT
           units: Volts
+          description: "The input line voltage in 1/10 VAC."
           preprocessing:
-            -
-              type: MULTIPLIER
+            - type: MULTIPLIER
               parameters:
-                - '.1'
+                - ".1"
           tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
+            - tag: Application
+              value: "UPS Input"
+        - uuid: 639a8e5aed7647c4a026956438d7c789
+          name: "UPS Input Max Line Voltage"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.3.2.2.0
+          key: cps.hardware.ups.upsAdvanceInputMaxLineVoltage
+          value_type: FLOAT
+          units: Volts
+          description: "The maximum input line voltage in 1/10 VAC over the previous 1 minute period."
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - ".1"
+          tags:
+            - tag: Application
+              value: "UPS Input"
+        - uuid: 79a04e5a6a4b441dba37220ef3ea2d7d
+          name: "UPS Input Min Line Voltage"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.3.2.3.0
+          key: cps.hardware.ups.upsAdvanceInputMinLineVoltage
+          value_type: FLOAT
+          units: Volts
+          description: "The minimum input line voltage in 1/10 VAC over the previous 1 minute period."
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - ".1"
+          tags:
+            - tag: Application
+              value: "UPS Input"
+        - uuid: a736ba1af341449a816208cfedf744d6
+          name: "UPS Input Status"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.3.2.6.0
+          key: cps.hardware.ups.upsAdvanceInputStatus
+          description: "Display the present status of the utility power supplied to the UPS."
+          valuemap:
+            name: "Input Status"
+          tags:
+            - tag: Application
+              value: "UPS Input"
           triggers:
-            -
-              uuid: 1e02d08e920647adb1c5437d3a2f1e81
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-InputVoltage,#1:now-0)<50'
-              name: 'No Electricity on {HOST.NAME}'
+            - uuid: 534f48fbe656455bae33edc7d75cedaa
+              expression: "last(/CyberPower UPS/cps.hardware.ups.upsAdvanceInputStatus)=5"
+              name: "Blackout on {HOST.NAME}"
               priority: DISASTER
-              manual_close: 'YES'
-        -
-          uuid: 5703844379f54caf91288f8c59b8ab25
-          name: UPS-LoadPower
-          type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.2.7.0
-          key: UPS-LoadPower
-          delay: 12h
-          units: Watts
-          tags:
-            -
-              tag: Application
-              value: 'UPS Information'
-        -
-          uuid: 5c26498e5d8e401d8e590fbc33040bf4
-          name: UPS-Model
-          type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.1.1.0
-          key: UPS-Model
-          delay: 12h
-          trends: '0'
-          value_type: CHAR
-          tags:
-            -
-              tag: Application
-              value: 'UPS Information'
-        -
-          uuid: f565e79c7ff54aef935a816941851b21
-          name: UPS-Name
-          type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.1.2.0
-          key: UPS-Name
-          delay: 12h
-          trends: '0'
-          value_type: CHAR
-          tags:
-            -
-              tag: Application
-              value: 'UPS Information'
-        -
-          uuid: 2655c4cd4703476085eca868edc94eb3
-          name: UPS-OutputCurrent
+              manual_close: "YES"
+            - uuid: a6de812453a64fbf95ac6b11c4c21622
+              expression: "last(/CyberPower UPS/cps.hardware.ups.upsAdvanceInputStatus)=4"
+              name: "Frequency Failure on {HOST.NAME}"
+              priority: DISASTER
+              manual_close: "YES"
+            - uuid: 6381ad21d05a444bb7b5f4514435473f
+              expression: "last(/CyberPower UPS/cps.hardware.ups.upsAdvanceInputStatus)=3"
+              name: "Under Voltage on {HOST.NAME}"
+              priority: DISASTER
+              manual_close: "YES"
+        - uuid: 2655c4cd4703476085eca868edc94eb3
+          name: "UPS Output Current"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.4.2.4.0
-          key: UPS-OutputCurrent
-          delay: 60s
+          key: cps.hardware.ups.upsAdvanceOutputCurrent
           units: amps
+          description: "The UPS output current in 1/10 Amps."
           tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
-        -
-          uuid: d1873f1e249b472b89e982ce0d752f4e
-          name: UPS-OutputFrequency
+            - tag: Application
+              value: "UPS Output"
+        - uuid: d1873f1e249b472b89e982ce0d752f4e
+          name: "UPS Output Frequency"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.4.2.2.0
-          key: UPS-OutputFrequency
-          delay: 60s
+          key: cps.hardware.ups.upsAdvanceOutputFrequency
           units: Hz
+          description: "The UPS output frequency in 1/10 Hz."
           preprocessing:
-            -
-              type: MULTIPLIER
+            - type: MULTIPLIER
               parameters:
-                - '.1'
+                - ".1"
           tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
-        -
-          uuid: cb09c2dd4edc4c3f9d3ba873979632fc
-          name: UPS-OutputLoad
+            - tag: Application
+              value: "UPS Output"
+        - uuid: cb09c2dd4edc4c3f9d3ba873979632fc
+          name: "UPS Output Load"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.4.2.3.0
-          key: UPS-OutputLoad
-          delay: 30s
-          units: Watts
+          key: cps.hardware.ups.upsAdvanceOutputLoad
+          units: "%"
+          description: "The UPS output load expressed in percentage."
           tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
+            - tag: Application
+              value: "UPS Output"
           triggers:
-            -
-              uuid: f145f2f577e34a5aa1cf165cfcc49eeb
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-OutputLoad)>900'
-              name: 'UPS Overloaded'
+            - uuid: f145f2f577e34a5aa1cf165cfcc49eeb
+              expression: "last(/CyberPower UPS/cps.hardware.ups.upsAdvanceOutputLoad)>900"
+              name: "UPS Overloaded"
               priority: HIGH
-              manual_close: 'YES'
-        -
-          uuid: 37cf50acdd984ad0b55e44bee0d454e2
-          name: UPS-OutputPower
+              manual_close: "YES"
+        - uuid: 1a852f13d47f4ae7b3050b621a6a7295
+          name: "UPS Output Phase"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.4.1.2.0
+          key: cps.hardware.ups.upsAdvanceOutputPhase
+          delay: 1d
+          description: "The output phase."
+          tags:
+            - tag: Application
+              value: "UPS Power Status"
+        - uuid: 37cf50acdd984ad0b55e44bee0d454e2
+          name: "UPS Output Power"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.4.2.5.0
-          key: UPS-OutputPower
-          delay: 60s
-          units: VA
+          key: cps.hardware.ups.upsAdvanceOutputPower
+          units: Watts
+          description: "The total output active power of the UPS system in W."
           tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
-        -
-          uuid: b5ba6897877848d2ad74b7d65e4456f2
-          name: UPS-OutputStatus
-          type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.4.1.1
-          key: UPS-OutputStatus
-          delay: 60s
-          description: |
-            1 ⇒ unknown
-            2 ⇒ onLine
-            3 ⇒ onBattery
-            4 ⇒ onBoost
-            5 ⇒ onSleep
-            6 ⇒ off
-            7 ⇒ rebooting
-          valuemap:
-            name: 'CyberPower UPS Output Status'
-          tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
-          triggers:
-            -
-              uuid: b38b77704fbe457eae4acb26e6fc6c7a
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-OutputStatus)=3'
-              name: 'Output is power by UPS Battery on {HOST.NAME}'
-              priority: DISASTER
-              manual_close: 'YES'
-        -
-          uuid: e83121510ba64019a416b8028ac797a5
-          name: UPS-OutputVoltage
+            - tag: Application
+              value: "UPS Output"
+        - uuid: e83121510ba64019a416b8028ac797a5
+          name: "UPS Output Voltage"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.4.2.1.0
-          key: UPS-OutputVoltage
-          delay: 60s
+          key: cps.hardware.ups.upsAdvanceOutputVoltage
+          value_type: FLOAT
           units: Volts
+          description: "The UPS output voltage in 1/10 VAC."
           preprocessing:
-            -
-              type: MULTIPLIER
+            - type: MULTIPLIER
               parameters:
-                - '.1'
+                - ".1"
           tags:
-            -
-              tag: Application
-              value: 'UPS Power Status'
-        -
-          uuid: c8b71dabd459471087d656f91523b19a
-          name: UPS-OutputWorkingFreq
+            - tag: Application
+              value: "UPS Output"
+        - uuid: d63dd417d0c8452d9d2c28269feda450
+          name: "UPS Battery Age Recommend"
           type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.4.1.3.0
-          key: UPS-OutputWorkingFreq
-          delay: 60s
-          trends: '0'
-          value_type: CHAR
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.1.4.0
+          key: cps.hardware.ups.upsBaseBatteryAgeRecommand
+          delay: 1d
+          description: "Recommended battery life in months."
           tags:
-            -
-              tag: Application
-              value: 'UPS Information'
-        -
-          uuid: 5646b9d4ab074d54a50dcfacdcae2e85
-          name: UPS-PowerRating
+            - tag: Application
+              value: "UPS Battery"
+        - uuid: f776b52977204c8ca14cdc250ecea7e6
+          name: "UPS Last Replace Date"
           type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.2.6.0
-          key: UPS-PowerRating
-          delay: 12h
-          units: Watts
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.1.3.0
+          key: cps.hardware.ups.upsBaseBatteryLastReplaceDate
+          delay: 1d
+          trends: "0"
+          value_type: TEXT
+          description: "The UPS batteries last replaced date in mm/dd/yyyy format. This value is originally set when manufactured. If batteries replaced, administrator should reset this value."
           tags:
-            -
-              tag: Application
-              value: 'UPS Information'
-        -
-          uuid: def69b471f6e4227b3e19b307dafa3b1
-          name: UPS-SerialNumber
+            - tag: Application
+              value: "UPS Battery"
+        - uuid: d15aebd8851f4caf868fcfe0c377be95
+          name: "UPS Battery Status"
           type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.2.3.0
-          key: UPS-SerialNumber
-          delay: 12h
-          trends: '0'
-          value_type: CHAR
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.1.1.0
+          key: cps.hardware.ups.upsBaseBatteryStatus
+          description: "The UPS battery status.  A batteryLow(3) value means the battery will be xhausted soon under the current load. The amount of low battery run time can be configured by the upsAdvanceConfigLowBatteryRunTime."
+          valuemap:
+            name: "CyberPower UPS Battery Status"
           tags:
-            -
-              tag: Application
-              value: 'UPS Information'
-        -
-          uuid: 22764812218348209383d23a11cc99e2
-          name: UPS-Temperature
-          type: SNMP_AGENT
-          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.2.3.0
-          key: UPS-TemperatureLevel
-          delay: 30s
-          units: C
-          description: 1.3.6.1.4.1.3808.1.1.1.2.2.3.0
-          tags:
-            -
-              tag: Application
-              value: 'UPS Environment'
-          triggers:
-            -
-              uuid: 54ddc558bc024d4d9f66a112403814d9
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-TemperatureLevel)>32'
-              name: 'Temperature is above 90F on {HOST.NAME}'
-              priority: DISASTER
-              manual_close: 'YES'
-        -
-          uuid: 1ce85b4d0baf43bf8945e731f73a61cd
-          name: UPS-TemperatureLevelF
-          type: CALCULATED
-          key: UPS-TemperatureLevelF
-          delay: 30s
-          units: F
-          params: '(last(//UPS-TemperatureLevel)*1.8+32)'
-          tags:
-            -
-              tag: Application
-              value: 'UPS Environment'
-          triggers:
-            -
-              uuid: 8298914f804844c79df4651916ea873d
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-TemperatureLevelF)>82'
-              name: 'Temperature is above 82F on {HOST.NAME}'
-              priority: HIGH
-              manual_close: 'YES'
-            -
-              uuid: 4771694019354a249ed69cc43332ff8c
-              expression: 'last(/UPS CyberPower PR1000RT2U/UPS-TemperatureLevelF)<59'
-              name: 'Temperature is below 59F on {HOST.NAME}'
-              priority: HIGH
-              manual_close: 'YES'
-        -
-          uuid: 16ef0e76a413459984e767bca4386543
-          name: UPS-TimeOnBattery
+            - tag: Application
+              value: "UPS Battery"
+        - uuid: 16ef0e76a413459984e767bca4386543
+          name: "UPS Time On Battery"
           type: SNMP_AGENT
           snmp_oid: 1.3.6.1.4.1.3808.1.1.1.2.1.2.0
-          key: UPS-TimeOnBattery
-          delay: 30s
-          trends: '0'
+          key: cps.hardware.ups.upsBaseBatteryTimeOnBattery
+          trends: "0"
           value_type: CHAR
+          description: "The UPS wasted battery time since the UPS has transferred to backup mode."
           tags:
-            -
-              tag: Application
-              value: 'UPS Fault Status'
+            - tag: Application
+              value: "UPS Battery"
+        - uuid: 5c26498e5d8e401d8e590fbc33040bf4
+          name: "UPS Model"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.1.1.0
+          key: cps.hardware.ups.upsBaseIdentModel
+          delay: 1d
+          trends: "0"
+          value_type: CHAR
+          description: "The UPS model name."
+          tags:
+            - tag: Application
+              value: "UPS Information"
+        - uuid: f565e79c7ff54aef935a816941851b21
+          name: "UPS Name"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.1.1.2.0
+          key: cps.hardware.ups.upsBaseIdentName
+          delay: 1d
+          trends: "0"
+          value_type: CHAR
+          description: "The UPS identified name could be set by the administrator. (Read-write)"
+          tags:
+            - tag: Application
+              value: "UPS Information"
+        - uuid: 061562f79b2549f88ee7e05e4758f482
+          name: "UPS Input Phase"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.3.1.1.0
+          key: cps.hardware.ups.upsBaseInputPhase
+          delay: 1d
+          description: "The AC input phase."
+          tags:
+            - tag: Application
+              value: "UPS Input"
+        - uuid: b5ba6897877848d2ad74b7d65e4456f2
+          name: "UPS Output Status"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.4.1.1.0
+          key: cps.hardware.ups.upsBaseOutputStatus
+          description: |
+            unknown(1),
+                  onLine(2),
+                  onBattery(3),
+                  onBoost(4),
+                  onSleep(5),
+                  off(6),
+                  rebooting(7),
+                  onECO(8),
+                  onBypass(9),
+                  onBuck(10),
+                  onOverload(11)
+          valuemap:
+            name: "CyberPower UPS Output Status"
+          tags:
+            - tag: Application
+              value: "UPS Power Status"
+          triggers:
+            - uuid: b38b77704fbe457eae4acb26e6fc6c7a
+              expression: "last(/CyberPower UPS/cps.hardware.ups.upsBaseOutputStatus)=3"
+              name: "Output is power by UPS Battery on {HOST.NAME}"
+              priority: DISASTER
+              manual_close: "YES"
+        - uuid: c8b71dabd459471087d656f91523b19a
+          name: "UPS Output Working Freq"
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.3808.1.1.1.4.1.3.0
+          key: cps.hardware.ups.upsBaseOutputWorkingFrequency
+          trends: "0"
+          value_type: CHAR
+          description: "The frequency of the UPS output power."
+          tags:
+            - tag: Application
+              value: "UPS Output"
       dashboards:
-        -
-          uuid: cb01b2787e934027a1766f0dc1ca6658
-          name: 'UPS Info'
+        - uuid: cb01b2787e934027a1766f0dc1ca6658
+          name: "UPS Info"
           pages:
-            -
-              widgets:
-                -
-                  type: GRAPH_CLASSIC
-                  width: '24'
-                  height: '5'
+            - widgets:
+                - type: GRAPH_CLASSIC
+                  width: "24"
+                  height: "5"
                   fields:
-                    -
-                      type: INTEGER
+                    - type: INTEGER
                       name: source_type
-                      value: '0'
-                    -
-                      type: GRAPH
+                      value: "0"
+                    - type: GRAPH
                       name: graphid
                       value:
-                        name: 'UPS Load and Battery Remaining'
-                        host: 'UPS CyberPower PR1000RT2U'
-                -
-                  type: GRAPH_CLASSIC
-                  'y': '5'
-                  width: '24'
-                  height: '5'
+                        host: "CyberPower UPS"
+                        name: "UPS Load and Battery Remaining"
+                - type: GRAPH_CLASSIC
+                  "y": "5"
+                  width: "24"
+                  height: "5"
                   fields:
-                    -
-                      type: INTEGER
+                    - type: INTEGER
                       name: source_type
-                      value: '0'
-                    -
-                      type: GRAPH
+                      value: "0"
+                    - type: GRAPH
                       name: graphid
                       value:
-                        name: 'UPS Battery Time Remaining'
-                        host: 'UPS CyberPower PR1000RT2U'
+                        host: "CyberPower UPS"
+                        name: "UPS Battery Time Remaining"
       valuemaps:
-        -
-          uuid: b321ab3ff4f1434698d042192f9d774f
-          name: 'CyberPower UPS Battery Replacement Indicator'
+        - uuid: b321ab3ff4f1434698d042192f9d774f
+          name: "CyberPower UPS Battery Replacement Indicator"
           mappings:
-            -
-              value: '1'
-              newvalue: 'Battery Healthy'
-            -
-              value: '2'
-              newvalue: 'Battery Needs Replacement'
-        -
-          uuid: 8b3b33a6a2444ef1af262397a6e35423
-          name: 'CyberPower UPS InputLineFailCause'
+            - value: "1"
+              newvalue: "Battery Healthy"
+            - value: "2"
+              newvalue: "Battery Needs Replacement"
+        - uuid: 7b80f68544944081bc37b59ab58fdff8
+          name: "CyberPower UPS Battery Status"
           mappings:
-            -
-              value: '1'
+            - value: "1"
+              newvalue: Unknown
+            - value: "2"
+              newvalue: "Battery Normal"
+            - value: "3"
+              newvalue: "Battery Low"
+            - value: "4"
+              newvalue: "Battery Not Present"
+        - uuid: 8b3b33a6a2444ef1af262397a6e35423
+          name: "CyberPower UPS InputLineFailCause"
+          mappings:
+            - value: "1"
               newvalue: noTransfer
-            -
-              value: '2'
+            - value: "2"
               newvalue: highLineVoltage
-            -
-              value: '3'
+            - value: "3"
               newvalue: brownout
-            -
-              value: '4'
+            - value: "4"
               newvalue: selfTest
-        -
-          uuid: 51bd978139c14ba7923a4965ab8c04ce
-          name: 'CyberPower UPS Input Status'
+        - uuid: 51bd978139c14ba7923a4965ab8c04ce
+          name: "CyberPower UPS Input Status"
           mappings:
-            -
-              value: '1'
+            - value: "1"
               newvalue: normal
-            -
-              value: '2'
+            - value: "2"
               newvalue: overVoltage
-            -
-              value: '3'
+            - value: "3"
               newvalue: underVoltage
-            -
-              value: '4'
+            - value: "4"
               newvalue: frequencyFailure
-            -
-              value: '5'
+            - value: "5"
               newvalue: blackout
-        -
-          uuid: e9a72719665f475c9ad30e96c33658e9
-          name: 'CyberPower UPS Output Status'
+        - uuid: e9a72719665f475c9ad30e96c33658e9
+          name: "CyberPower UPS Output Status"
           mappings:
-            -
-              value: '1'
-              newvalue: unknown
-            -
-              value: '2'
-              newvalue: onLine
-            -
-              value: '3'
-              newvalue: onBattery
-            -
-              value: '4'
-              newvalue: onBoost
-            -
-              value: '5'
-              newvalue: onSleep
-            -
-              value: '6'
-              newvalue: 'off'
-            -
-              value: '7'
-              newvalue: rebooting
+            - value: "1"
+              newvalue: Unknown
+            - value: "2"
+              newvalue: Online
+            - value: "3"
+              newvalue: "On Battery"
+            - value: "4"
+              newvalue: "On Boost"
+            - value: "5"
+              newvalue: "On Sleep"
+            - value: "6"
+              newvalue: "Off"
+            - value: "7"
+              newvalue: Rebooting
+            - value: "8"
+              newvalue: "On ECO"
+            - value: "9"
+              newvalue: "On Bypass"
+            - value: "10"
+              newvalue: "On Buck"
+            - value: "11"
+              newvalue: "On Overload"
+        - uuid: 3efc9f9e979845f69fd0a018ffc3e585
+          name: "Input Line Fail Cause"
+          mappings:
+            - value: "1"
+              newvalue: "No Transfer"
+            - value: "2"
+              newvalue: "High Line Voltage"
+            - value: "3"
+              newvalue: Brownout
+            - value: "4"
+              newvalue: "Self Test"
+        - uuid: 72c4a65e763845ddb2c5a80c3d0d6c5b
+          name: "Input Status"
+          mappings:
+            - value: "1"
+              newvalue: Normal
+            - value: "2"
+              newvalue: "Over Voltage"
+            - value: "3"
+              newvalue: "Under Voltage"
+            - value: "4"
+              newvalue: "Frequency Failure"
+            - value: "5"
+              newvalue: Blackout
   graphs:
-    -
-      uuid: 21848a5e6bb24fe69ade051bb37ae2f4
-      name: 'UPS Battery Time Remaining'
+    - uuid: 21848a5e6bb24fe69ade051bb37ae2f4
+      name: "UPS Battery Time Remaining"
       graph_items:
-        -
-          color: 33FF33
+        - color: 33FF33
           item:
-            host: 'UPS CyberPower PR1000RT2U'
-            key: UPS-BatteryMinutesRemaining
-    -
-      uuid: 92d707da5e91452ea0f9458fc9f20bc8
-      name: 'UPS Load and Battery Remaining'
+            host: "CyberPower UPS"
+            key: cps.hardware.ups.upsAdvanceBatteryRunTimeRemaining
+    - uuid: 92d707da5e91452ea0f9458fc9f20bc8
+      name: "UPS Load and Battery Remaining"
       graph_items:
-        -
-          drawtype: FILLED_REGION
+        - drawtype: FILLED_REGION
           color: 1A7C11
           item:
-            host: 'UPS CyberPower PR1000RT2U'
-            key: UPS-BatteryLevelPercent
-        -
-          sortorder: '1'
+            host: "CyberPower UPS"
+            key: cps.hardware.ups.upsAdvanceBatteryCapacity
+        - sortorder: "1"
           drawtype: DASHED_LINE
           color: 66FF66
           item:
-            host: 'UPS CyberPower PR1000RT2U'
-            key: UPS-OutputLoad
+            host: "CyberPower UPS"
+            key: cps.hardware.ups.upsAdvanceOutputLoad
