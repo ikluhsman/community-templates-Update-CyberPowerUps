@@ -64,3 +64,13 @@ There are no discovery rules in this template.
 
 There are no triggers in this template.
 
+
+# Updates done by Ian Kluhsman 12/6/2022
+
+- Updated all keys to match the tree specification under the CPS-MIB downloaded from CyberPower.com
+- Added values that did not exist before
+- Tweaked some of the preprocessing rules to display certain bits of data, mainly voltages and amp units.
+- Updated value mappings from updated CyberPoewr CPS-MIB
+
+
+
